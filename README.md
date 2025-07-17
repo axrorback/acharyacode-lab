@@ -41,8 +41,8 @@ Welcome to the official repository for the **Acharya University Digital Code Lab
 ### 1. Clone the Repo
 
 ```bash
-git clone https://github.com/YourUsername/acharya-python-lab.git
-cd acharya-python-lab
+git clone https://github.com/axrorback/acharyacode-lab.git
+cd acharyacode-lab
 ```
 
 ### 2. Set Up a Virtual Environment
