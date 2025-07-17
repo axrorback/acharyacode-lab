@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>HTML Lab - Acharya CodeLab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- CodeMirror CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/eclipse.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/material-darker.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/hint/show-hint.min.css">
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .CodeMirror {
+      height: 500px;
+      border-radius: 10px;
+      font-size: 15px;
+      line-height: 1.5;
+      border: 1px solid #ccc;
+    }
+
+    iframe {
+      width: 100%;
+      height: 500px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+
+    [data-bs-theme="dark"] iframe {
+      background-color: #1e1e1e;
+      color-scheme: dark;
+    }
+
+    .header-logo {
+      width: 50px;
+    }
+
+    .lab-container {
+      margin-top: 60px;
+      margin-bottom: 60px;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--bs-secondary-color);
+    }
+
+    .btn-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    .editor-preview {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .editor-preview {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="bg-body text-body">
+  <div class="container position-relative">
+
+    <!-- Toggle Theme -->
+    <button class="btn btn-outline-secondary btn-sm btn-toggle" onclick="toggleTheme()">
+      <i class="bi bi-moon-stars-fill"></i> Toggle Theme
+    </button>
+
+    <div class="lab-container">
+      <!-- Title & Branding -->
+      <div class="text-center mb-4">
+        <img src="/static/logo.png" alt="Logo" class="header-logo mb-2">
+        <h2><i class="bi bi-code-slash"></i> HTML Lab</h2>
+        <p class="text-muted">
+          Explore frontend with <strong style="color:#007bff">Acharya University</strong><br>
+          Developed by <strong>Ahrorjon Ibrohimjonov</strong>
+        </p>
+      </div>
+
+      <!-- Code Editor & Preview Side-by-Side -->
+      <div class="editor-preview">
+        <div>
+          <textarea id="code"></textarea>
+          <div class="d-grid gap-2 mt-3">
+            <button onclick="runHTML()" class="btn btn-success">
+              <i class="bi bi-play-fill"></i> Preview
+            </button>
+            <button onclick="shareCode()" class="btn btn-outline-primary">
+              <i class="bi bi-share-fill"></i> Share Code
+            </button>
+          </div>
+        </div>
+        <div>
+          <iframe id="output" class="w-100"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      &copy; 2025 Acharya University CodeLab. Made with ❤️ by <strong>Ahrorjon Ibrohimjonov</strong>.
+    </footer>
+  </div>
+
+  <!-- CodeMirror JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/css/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/htmlmixed/htmlmixed.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closetag.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/hint/show-hint.min.js"></script>
+
+  <!-- App Script -->
+  <script>
+    let editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      mode: "htmlmixed",
+      theme: "eclipse",
+      lineNumbers: true,
+      autoCloseTags: true,
+      autoCloseBrackets: true,
+      lineWrapping: true,
+      matchBrackets: true,
+      extraKeys: {
+        "Ctrl-Space": "autocomplete"
+      }
+    });
+
+    // Load from localStorage
+    window.addEventListener("load", () => {
+      const saved = localStorage.getItem("html_lab_code");
+      if (saved) editor.setValue(saved);
+      else editor.setValue(`<!DOCTYPE html>
+<html>
+  <head>
+    <title>Hello HTML</title>
+  </head>
+  <body>
+    <h1>Welcome to Acharya HTML Lab</h1>
+    <p>Type your code here...</p>
+    <p>Developer Ahrorjon Ibrohimjonov</p>
+  </body>
+</html>`);
+    });
+
+    // AutoSave
+    editor.on("change", () => {
+      localStorage.setItem("html_lab_code", editor.getValue());
+    });
+
+    // Run HTML
+    function runHTML() {
+      fetch("/run/html", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: editor.getValue() })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("output").srcdoc = data.output;
+      });
+    }
+
+    // Theme toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute("data-bs-theme");
+      const next = current === "light" ? "dark" : "light";
+      html.setAttribute("data-bs-theme", next);
+
+      const theme = next === "dark" ? "material-darker" : "eclipse";
+      editor.setOption("theme", theme);
+    }
+
+    // Share
+    function shareCode() {
+      fetch("/share/html", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: editor.getValue() })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const shareUrl = window.location.origin + data.url;
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          alert("✅ Link copied:\n" + shareUrl);
+        });
+      })
+      .catch(() => alert("❌ Sharing failed."));
+    }
+  </script>
+</body>
+</html>
