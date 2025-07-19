@@ -1,6 +1,8 @@
 import os
+import re
 import uuid
 
+import requests
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from utils import run_python_code, run_html_code
 
@@ -20,11 +22,18 @@ def python_lab():
 def html_lab():
     return render_template("html_lab.html")
 
+
 @app.route("/run/python", methods=["POST"])
 def run_python():
-    code = request.json.get("code", "")
-    output = run_python_code(code)
-    return jsonify({"output": output})
+    try:
+        code = request.json.get("code", "")
+        if not code.strip():
+            return jsonify({"error": "❗️Kod yuborilmadi."}), 400
+
+        output = run_python_code(code)
+        return jsonify({"output": output})
+    except Exception as e:
+        return jsonify({"error": f"🚨 Ichki xatolik: {str(e)}"}), 500
 
 @app.route("/run/html", methods=["POST"])
 def run_html():
@@ -87,7 +96,65 @@ def view_shared_code(code_id):
 @app.route('/static/<path:filename>')
 def static_files(filename):
     return send_from_directory('static', filename)
+@app.route("/ai/help", methods=["POST"])
+def ai_help():
+    code = request.json.get("code", "")
+    if not code.strip():
+        return jsonify({"error": "❗️Kod bo‘sh bo‘lishi mumkin emas."}), 400
 
+    prompt = f"""Write a Python code snippet for the following request.
+Respond only with the raw Python code — no explanations, no markdown.
+
+```python
+{code}
+```"""
+
+    headers = {
+        "Content-Type": "application/json",
+        "x-goog-api-key": "AIzaSyAFUxWAKSRHbTs3wktwTAzvL48tMaE7mps",
+    }
+
+    payload = {
+        "contents": [
+            {
+                "role": "user",
+                "parts": [{"text": prompt}]
+            }
+        ]
+    }
+
+    try:
+        res = requests.post(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+            headers=headers, json=payload
+        )
+
+        if res.status_code == 200:
+            data = res.json()
+            candidates = data.get("candidates", [])
+            if not candidates or "content" not in candidates[0]:
+                return jsonify({"error": "❌ AI'dan kod topilmadi."}), 500
+
+            response_text = candidates[0]['content']['parts'][0].get('text', '').strip()
+
+            # ⬇️ Markdown bloklarini tozalaymiz
+            match = re.search(r"```(?:python)?\s*(.*?)```", response_text, re.DOTALL)
+            if match:
+                response_text = match.group(1).strip()
+
+            if not response_text:
+                return jsonify({"error": "❌ AI'dan kod topilmadi."}), 500
+
+            return jsonify({"response": response_text})
+
+        else:
+            return jsonify({
+                "error": f"Gemini API error: {res.status_code}",
+                "details": res.text
+            }), 500
+
+    except Exception as e:
+        return jsonify({"error": f"🚨 Server xatoligi: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)

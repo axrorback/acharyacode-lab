@@ -109,8 +109,30 @@
         <button onclick="captureScreenshot()" class="btn btn-info">
           <i class="bi bi-camera"></i> Screenshot
         </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#aiModal">
+          <i class="bi bi-stars"></i> AI Yordam
+          </button>
+
       </div>
     </div>
+        <div class="modal fade" id="aiModal" tabindex="-1" aria-labelledby="aiModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+              <h5 class="modal-title" id="aiModalLabel">🤖 AI yordamchi</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Yopish"></button>
+                </div>
+              <div class="modal-body">
+              <textarea id="aiPromptInput" class="form-control bg-black text-white" rows="4" placeholder="Misol: 'Fibonacci funksiyasini yozib ber' yoki 'Bu kodda nima xato bor?'"></textarea>
+        <div id="aiStatus" class="mt-3 text-info"></div>
+          </div>
+          <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
+          <button type="button" class="btn btn-primary" onclick="sendAiPrompt()">Yuborish</button>
+          </div>
+          </div>
+          </div>
+      </div>
 
     <!-- Right: Output -->
     <div class="col-md-6">
@@ -133,6 +155,7 @@
 <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/hint/show-hint.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/hint/python-hint.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/edit/closebrackets.js"></script> <!-- 🆕 kerakli fayl -->
 
 <script>
   const editor = CodeMirror.fromTextArea(document.getElementById("code"), {
@@ -225,6 +248,41 @@
       document.body.removeChild(wrapper);
     });
   }
+function sendAiPrompt() {
+  const prompt = document.getElementById("aiPromptInput").value.trim();
+  const aiStatus = document.getElementById("aiStatus");
+
+  if (!prompt) {
+    aiStatus.innerText = "⚠️ Iltimos, savol yoki kod yozing.";
+    return;
+  }
+
+  aiStatus.innerText = "🔄 AI javob tayyorlayapti...";
+
+  fetch("/ai/help", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code: prompt }) // 🟢 BU YERGA code deb yuboramiz
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.response) {
+      editor.setValue(data.response);  // ⬅️ Kodni editorga joylaymiz
+      aiStatus.innerText = "✅ Kod topildi!";
+
+      const modal = bootstrap.Modal.getInstance(document.getElementById('aiModal'));
+      if (modal) modal.hide(); // 🟢 Modalni yopamiz
+    } else if (data.error) {
+      aiStatus.innerText = "❌ " + data.error;
+    } else {
+      aiStatus.innerText = "❌ AI'dan kod topilmadi.";
+    }
+  })
+  .catch(err => {
+    aiStatus.innerText = "🚫 AI bilan bog‘lanishda xatolik: " + err.message;
+  });
+}
+
 </script>
 
 </body>
